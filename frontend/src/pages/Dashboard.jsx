@@ -1,61 +1,98 @@
 import { useContext } from "react";
 import { SystemContext } from "../context/SystemContext";
-import Sidebar from "../components/Sidebar";
+// We are importing Recharts directly here to avoid "Missing Component" errors
+import { ResponsiveContainer, AreaChart, Area, XAxis, CartesianGrid, Tooltip } from 'recharts';
 
 export default function Dashboard() {
   const { systemState } = useContext(SystemContext);
 
-  const getPriorityInfo = () => {
-    if (systemState.emergency || systemState.accident === "YES") 
-      return { level: "P0", label: "SOS / ACCIDENT", color: "text-neon-red", bg: "bg-neon-red/10" };
-    if (systemState.crowd === "HIGH") 
-      return { level: "P1", label: "CROWD ANOMALY", color: "text-neon-amber", bg: "bg-neon-amber/10" };
-    if (systemState.occupancy === "YES") 
-      return { level: "P2", label: "NORMAL MOTION", color: "text-neon-cyan", bg: "bg-neon-cyan/10" };
-    return { level: "P3", label: "NO ACTIVITY", color: "text-slate-500", bg: "bg-white/5" };
+  // 1. FAIL-SAFE: If context is dead, provide default data so the app doesn't crash
+  const state = systemState || { 
+    occupancy: "NO", 
+    accident: "NO", 
+    brightness: 0, 
+    emergency: false,
+    crowd_status: "OFFLINE" 
   };
 
-  const priority = getPriorityInfo();
+  // 2. INLINE CHART DATA (No external file needed)
+  const chartData = [
+    { time: '00:00', value: 20 }, { time: '04:00', value: 50 },
+    { time: '08:00', value: 80 }, { time: '12:00', value: 40 },
+    { time: '16:00', value: 60 }, { time: '20:00', value: 90 },
+  ];
 
   return (
-    <div className="flex bg-slate-950 min-h-screen">
-      <Sidebar />
-      <main className={`flex-1 ml-64 p-8 transition-all duration-500 ${systemState.emergency ? 'shadow-[inset_0_0_100px_rgba(239,68,68,0.2)]' : ''}`}>
+    <div className="space-y-8 pb-10">
+      {/* HEADER */}
+      <header>
+        <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter drop-shadow-lg">
+          SMART<span className="text-neon-cyan">LIGHT</span>
+        </h1>
+        <p className="text-slate-400 uppercase tracking-widest text-sm border-l-2 border-neon-cyan pl-4 mt-2">
+          System Overview
+        </p>
+      </header>
+
+      {/* EMERGENCY ALERT */}
+      {state.emergency && (
+        <div className="bg-red-500/10 border border-red-500 text-red-500 p-6 rounded-xl text-center font-bold animate-pulse">
+          🚨 EMERGENCY PROTOCOLS ENGAGED
+        </div>
+      )}
+
+      {/* METRICS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Occupancy */}
+        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+          <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest">Occupancy</h3>
+          <p className="text-4xl font-black text-white mt-2">
+            {state.occupancy === "YES" ? "DETECTED" : "CLEAR"}
+          </p>
+        </div>
         
-        {/* Top Priority HUD */}
-        <div className={`mb-8 p-6 rounded-2xl border border-white/10 backdrop-blur-md flex justify-between items-center ${priority.bg}`}>
-          <div>
-            <h3 className="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Active Priority Logic</h3>
-            <p className={`text-2xl font-black ${priority.color}`}>{priority.level} — {priority.label}</p>
-          </div>
-          {systemState.emergency && (
-            <div className="bg-neon-red text-white px-4 py-1 rounded-full text-xs font-bold animate-pulse">
-              EMERGENCY OVERRIDE
-            </div>
-          )}
+        {/* Safety */}
+        <div className={`bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm ${state.accident === "YES" ? "border-red-500" : ""}`}>
+          <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest">Safety Status</h3>
+          <p className={`text-4xl font-black mt-2 ${state.accident === "YES" ? "text-red-500" : "text-emerald-400"}`}>
+            {state.accident === "YES" ? "CRITICAL" : "SECURE"}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="glass-card">
-            <h3 className="text-xs text-slate-500 uppercase font-bold mb-4">Occupancy</h3>
-            <p className="text-4xl font-black text-white">{systemState.occupancy}</p>
-          </div>
-          <div className={`glass-card ${systemState.crowd === "HIGH" ? 'neon-glow-cyan' : ''}`}>
-            <h3 className="text-xs text-slate-500 uppercase font-bold mb-4">Crowd Density</h3>
-            <p className="text-4xl font-black text-white">{systemState.crowd}</p>
-          </div>
-          <div className="glass-card">
-            <h3 className="text-xs text-slate-500 uppercase font-bold mb-4">Light Output</h3>
-            <p className="text-4xl font-black text-neon-cyan">{systemState.brightness}</p>
-          </div>
-          <div className={`glass-card ${systemState.accident === "YES" ? 'neon-glow-red' : ''}`}>
-            <h3 className="text-xs text-slate-500 uppercase font-bold mb-4">Safety State</h3>
-            <p className={`text-4xl font-black ${systemState.accident === "YES" ? 'text-neon-red' : 'text-green-500'}`}>
-              {systemState.accident === "YES" ? "FALL!!" : "SECURE"}
-            </p>
-          </div>
+        {/* Lighting */}
+        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+          <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest">Brightness</h3>
+          <p className="text-4xl font-black text-neon-cyan mt-2">
+            {state.brightness}%
+          </p>
         </div>
-      </main>
+
+        {/* Crowd */}
+        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+          <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest">Crowd Level</h3>
+          <p className="text-4xl font-black text-white mt-2">
+            {state.crowd_status}
+          </p>
+        </div>
+      </div>
+
+      {/* INLINE CHART COMPONENT */}
+      <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
+        <h3 className="text-slate-500 text-xs font-bold uppercase mb-4 tracking-widest">Live Traffic Analysis</h3>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+              <XAxis dataKey="time" hide />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '8px' }}
+                itemStyle={{ color: '#06b6d4' }}
+              />
+              <Area type="monotone" dataKey="value" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.1} strokeWidth={3} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 }

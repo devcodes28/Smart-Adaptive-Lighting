@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { SystemContext } from "../context/SystemContext";
 import { ShieldAlert, Zap } from 'lucide-react';
 
-export default function SafetyControl() {
+export default function Safety() {
   const { systemState } = useContext(SystemContext);
 
   const triggerSOS = async () => {
