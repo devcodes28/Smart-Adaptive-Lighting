@@ -5,7 +5,7 @@ status_bp = Blueprint("status", __name__)
 
 @status_bp.route("/status", methods=["GET"])
 def get_status():
-    # Returns the live state to the frontend
+    """Returns the live system state to the dashboard."""
     return jsonify({
         "occupancy": state.occupancy_state,
         "crowd": state.crowd_state,
