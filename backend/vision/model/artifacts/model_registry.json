@@ -1,0 +1,4 @@
+{
+  "updated_at": null,
+  "message": "Model not trained yet. Run python -m vision.model.train_yolo --refresh-dataset"
+}

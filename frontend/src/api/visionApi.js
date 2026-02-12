@@ -15,3 +15,16 @@ export const getVisionHealth = async () => {
     return { vision: "error" };
   }
 };
+
+/**
+ * Returns YOLO training configuration + latest registry values.
+ */
+export const getVisionModelSummary = async () => {
+  try {
+    const res = await axios.get(`${API_BASE}/model/summary`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching vision model summary:", error);
+    return null;
+  }
+};
