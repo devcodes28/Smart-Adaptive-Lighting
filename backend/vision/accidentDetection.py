@@ -1,45 +1,68 @@
 import cv2
 import time
+from ultralytics import YOLO
 from utils.decisionLogic import evaluate_and_alert
-from utils.config import BIG_MOTION_THRESHOLD, INACTIVITY_TIME
+
+# 1. Load your new custom model
+# This path points to the file you just moved into 'artifacts'
+model = YOLO('vision/model/artifacts/best.pt') 
 
 def run_accident_detection():
+    # Initialize Camera
     cap = cv2.VideoCapture(0)
-    ret, prev_frame = cap.read()
-    prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-    prev_gray = cv2.GaussianBlur(prev_gray, (21, 21), 0)
-
-    last_big_motion_time = None
-    accident_detected = False
+    
+    # Settings
+    CONF_THRESHOLD = 0.5  # Only detect if 50% sure
+    
+    print("✅ Smart Lighting Vision System Started...")
+    print("   (Press 'q' to stop)")
 
     while True:
         ret, frame = cap.read()
-        if not ret: break
+        if not ret: 
+            print("❌ Camera error")
+            break
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        # 2. Let the AI look at the frame
+        results = model(frame, stream=True, verbose=False)
+
+        traffic_detected = False
+        vehicle_count = 0
         
-        # Detect Motion Intensity
-        diff = cv2.absdiff(prev_gray, gray)
-        thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
-        motion_pixels = cv2.countNonZero(thresh)
+        # 3. Analyze what the AI saw
+        for result in results:
+            boxes = result.boxes
+            for box in boxes:
+                cls_id = int(box.cls[0])
+                conf = float(box.conf[0])
+                class_name = model.names[cls_id]
 
-        current_time = time.time()
+                # 4. Check for Vehicles (Car, Truck, Bus, Motorcycle)
+                # Note: The standard YOLO model uses these names.
+                if conf > CONF_THRESHOLD and class_name in ['car', 'truck', 'bus', 'motorcycle']:
+                    vehicle_count += 1
+                    traffic_detected = True
+                    
+                    # Draw a Green Box around the vehicle
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(frame, f"{class_name.upper()} {conf:.2f}", (x1, y1 - 10), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        # Logic: Big motion followed by inactivity = Accident
-        if motion_pixels > BIG_MOTION_THRESHOLD:
-            last_big_motion_time = current_time
-            accident_detected = False
-        elif last_big_motion_time and (current_time - last_big_motion_time > INACTIVITY_TIME):
-            accident_detected = True
+        # 5. Decision Logic (Traffic = Lights ON)
+        if traffic_detected:
+            # We treat cars like "people" for the logic -> Brightness 100%
+            evaluate_and_alert(people_count=vehicle_count, accident_detected=False)
+        else:
+            # No cars -> Brightness Dim/Off
+            evaluate_and_alert(people_count=0, accident_detected=False)
 
-        if accident_detected:
-            evaluate_and_alert(people_count=0, accident_detected=True)
-            cv2.putText(frame, "ACCIDENT DETECTED!", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-
-        cv2.imshow("Safety Feed", frame)
-        prev_gray = gray
-        if cv2.waitKey(1) & 0xFF == ord('q'): break
+        # Show the video feed
+        cv2.imshow("Smart Adaptive Lighting - Traffic View", frame)
+        
+        # Press 'q' to quit
+        if cv2.waitKey(1) & 0xFF == ord('q'): 
+            break
 
     cap.release()
     cv2.destroyAllWindows()

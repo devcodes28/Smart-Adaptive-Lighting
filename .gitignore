@@ -1,12 +1,63 @@
-# Environments
-.venv/
-node_modules/
-
-# Python logs and cache
+# ==========================
+# 🐍 PYTHON / FLASK (Backend)
+# ==========================
 __pycache__/
-*.pyc
-backend/state.pyc
+*.py[cod]
+*$py.class
 
-# Distribution
-dist/
-build/
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Flask & Environment Variables
+instance/
+.webassets-cache
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==========================
+# ⚛️ REACT / NODE (Frontend)
+# ==========================
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+
+node_modules/
+**/node_modules/
+
+# Production Build Output
+frontend/dist/
+frontend/build/
+
+# Local Netlify/Vercel folders (if used)
+.netlify/
+.vercel/
+
+# ==========================
+# 🧠 YOLO / MACHINE LEARNING
+# ==========================
+# Ignore training logs and huge intermediate files
+runs/
+smart_lighting_project/
+
+# Ignore large model weights (Optional: Keep this commented if you WANT to push models)
+# *.pt
+# *.onnx
+
+# Exception: Always keep your specific artifact folder tracked if you want
+!backend/vision/model/artifacts/
+
+# ==========================
+# 💻 SYSTEM & IDE FILES
+# ==========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

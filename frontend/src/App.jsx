@@ -1,41 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Lightbulb, Eye, ShieldAlert, History, Zap, Power, AlertTriangle, CheckCircle } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
+import { LayoutDashboard, Lightbulb, Eye, ShieldAlert, History, Zap, Power, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, CartesianGrid, Tooltip } from 'recharts';
 
-// --- 1. SYSTEM CONTEXT (Global State) ---
-const SystemContext = createContext();
-
-const SystemProvider = ({ children }) => {
-  const [systemState, setSystemState] = useState({
-    occupancy: "NO",
-    accident: "NO",
-    brightness: 80,
-    emergency: false,
-    crowd_status: "NORMAL",
-    active_cameras: 4,
-    power_usage: "1.2 kW"
-  });
-
-  // Simulation Loop for Live Data Effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSystemState(prev => ({
-        ...prev,
-        brightness: Math.floor(Math.random() * (100 - 60) + 60),
-        occupancy: Math.random() > 0.6 ? "YES" : "NO",
-        power_usage: (Math.random() * (1.5 - 0.8) + 0.8).toFixed(1) + " kW"
-      }));
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <SystemContext.Provider value={{ systemState, setSystemState }}>
-      {children}
-    </SystemContext.Provider>
-  );
-};
+// --- IMPORTS FOR THE FIX ---
+// 1. Import the "Brain" we created (Context & Provider)
+import { SystemProvider, SystemContext } from "./context/SystemContext";
+// 2. Import the separate Vision Page
+import VisionAnalytics from "./pages/VisionAnalytics"; 
 
 // --- 2. SIDEBAR COMPONENT ---
 const Sidebar = () => {
@@ -91,6 +63,7 @@ const StatusCard = ({ label, value, color, icon: Icon }) => (
 );
 
 const Dashboard = () => {
+  // Uses the imported SystemContext
   const { systemState } = useContext(SystemContext);
   const data = [{time:'00:00',v:20},{time:'04:00',v:40},{time:'08:00',v:80},{time:'12:00',v:50},{time:'16:00',v:70},{time:'20:00',v:90},{time:'23:00',v:30}];
 
@@ -150,7 +123,6 @@ const Lighting = () => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Manual Control Card */}
         <div className="bg-white/5 border border-white/10 p-8 rounded-3xl">
           <div className="flex justify-between items-center mb-10">
             <h2 className="text-2xl font-bold text-white flex items-center gap-3"><Zap className="text-amber-400"/> Intensity Level</h2>
@@ -167,7 +139,6 @@ const Lighting = () => {
           <p className="text-slate-500 text-sm mt-4 text-center">Drag slider to activate Manual Mode</p>
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
           <button onClick={() => setManualMode(false)} className="bg-white/5 hover:bg-cyan-500/20 border border-white/10 hover:border-cyan-500 p-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all group">
             <div className="p-3 bg-slate-800 rounded-full group-hover:bg-cyan-500 group-hover:text-black transition-colors">
@@ -187,59 +158,7 @@ const Lighting = () => {
   );
 };
 
-// --- 5. VISION PAGE ---
-const Vision = () => {
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <header>
-        <h1 className="text-4xl font-black text-white">VISION <span className="text-cyan-400">ANALYTICS</span></h1>
-        <p className="text-slate-400 mt-2">Real-time Object Detection Stream</p>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Feed */}
-        <div className="lg:col-span-2 aspect-video bg-black rounded-3xl border border-white/10 relative overflow-hidden group">
-          {/* Simulated Camera Feed Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-6">
-             <p className="text-red-500 font-bold animate-pulse mb-1">● LIVE FEED</p>
-             <h3 className="text-white font-mono text-lg">CAM-01 [MAIN GATE]</h3>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-             <p className="text-slate-600 font-mono text-sm">[ WAITING FOR RTSP STREAM ]</p>
-          </div>
-          {/* Grid Overlay Effect */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-        </div>
-
-        {/* Side Stats */}
-        <div className="space-y-6">
-          <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-            <h3 className="text-slate-500 text-xs font-bold uppercase mb-2">Detected Objects</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-white">
-                <span>Person</span>
-                <span className="bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded text-xs font-bold">02</span>
-              </div>
-              <div className="flex justify-between items-center text-white">
-                <span>Car</span>
-                <span className="bg-slate-700 text-slate-400 px-2 py-1 rounded text-xs font-bold">00</span>
-              </div>
-            </div>
-          </div>
-
-           <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-            <h3 className="text-slate-500 text-xs font-bold uppercase mb-2">Camera Status</h3>
-            <div className="flex items-center gap-2 text-emerald-400 text-sm font-bold">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full" /> Signal Stable (12ms)
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- 6. SAFETY PAGE ---
+// --- 5. SAFETY PAGE ---
 const Safety = () => {
   const { systemState, setSystemState } = useContext(SystemContext);
 
@@ -250,7 +169,6 @@ const Safety = () => {
         <p className="text-slate-400 mt-2">Emergency Protocols & Alerts</p>
       </header>
 
-      {/* Main Status Banner */}
       <div className={`p-8 rounded-3xl border ${systemState.emergency ? 'bg-red-500/10 border-red-500' : 'bg-emerald-500/10 border-emerald-500/50'} transition-all duration-500`}>
         <div className="flex items-center gap-4 mb-4">
           {systemState.emergency ? <AlertTriangle size={40} className="text-red-500" /> : <ShieldAlert size={40} className="text-emerald-500" />}
@@ -281,7 +199,7 @@ const Safety = () => {
   );
 };
 
-// --- 7. LOGS PAGE ---
+// --- 6. LOGS PAGE ---
 const Logs = () => {
   const logs = [
     { time: "10:45:02", type: "INFO", msg: "System routine check complete. All nodes active." },
@@ -330,9 +248,10 @@ const Logs = () => {
   );
 };
 
-// --- 8. MAIN APP COMPONENT ---
+// --- 7. MAIN APP COMPONENT ---
 export default function App() {
   return (
+    // Wraps the entire app with the external SystemProvider
     <SystemProvider>
       <BrowserRouter>
         <div className="flex bg-slate-950 min-h-screen text-slate-200 font-sans selection:bg-cyan-500 selection:text-black">
@@ -341,7 +260,10 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/lighting" element={<Lighting />} />
-              <Route path="/vision" element={<Vision />} />
+              
+              {/* This one comes from the separate file */}
+              <Route path="/vision" element={<VisionAnalytics />} />
+              
               <Route path="/safety" element={<Safety />} />
               <Route path="/logs" element={<Logs />} />
             </Routes>
